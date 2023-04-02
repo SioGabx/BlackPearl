@@ -16,10 +16,6 @@ namespace BlackPearl.Controls.CoreLibrary
         #region Constructor
         static MultiSelectCombobox()
         {
-#if DEBUG
-            //https://weblogs.asp.net/akjoshi/resolving-un-harmful-binding-errors-in-wpf
-            System.Diagnostics.PresentationTraceSources.DataBindingSource.Switch.Level = System.Diagnostics.SourceLevels.Critical;
-#endif
             DefaultStyleKeyProperty.OverrideMetadata(typeof(MultiSelectCombobox), new FrameworkPropertyMetadata(typeof(MultiSelectCombobox)));
         }
         public MultiSelectCombobox()
@@ -156,28 +152,6 @@ namespace BlackPearl.Controls.CoreLibrary
         {
             get => (char[])GetValue(AdditionalItemSeparatorsProperty);
             set => SetValue(AdditionalItemSeparatorsProperty, value);
-        }
-
-        /// <summary>
-        /// Do delete empty values. Default value is true
-        /// </summary>
-        public static readonly DependencyProperty DoDeleteInvalidEntryProperty =
-            DependencyProperty.Register(nameof(DoDeleteInvalidEntry), typeof(bool), typeof(MultiSelectCombobox), new PropertyMetadata(true));
-        public bool DoDeleteInvalidEntry
-        {
-            get => (bool)GetValue(DoDeleteInvalidEntryProperty);
-            set => SetValue(DoDeleteInvalidEntryProperty, value);
-        }
-
-        /// <summary>
-        /// Show add item. Default value is false
-        /// </summary>
-        public static readonly DependencyProperty ShowCreateNewItemProperty =
-            DependencyProperty.Register(nameof(ShowCreateNewItem), typeof(bool), typeof(MultiSelectCombobox), new PropertyMetadata(false));
-        public bool ShowCreateNewItem
-        {
-            get => (bool)GetValue(ShowCreateNewItemProperty);
-            set => SetValue(ShowCreateNewItemProperty, value);
         }
 
         /// <summary>
