@@ -1,5 +1,4 @@
 ﻿using System;
-
 using BlackPearl.Controls.Contract;
 using BlackPearl.Controls.Extension;
 
@@ -42,8 +41,8 @@ namespace BlackPearl.Controls.CoreLibrary
         private static bool StringEqualsPredicate(string value1, string value2)
         {
             return value1 != null
-                && value2 != null
-                && string.Compare(value1.ToString(), value2, StringComparison.InvariantCultureIgnoreCase) == 0;
+               && value2 != null
+               && string.Compare(value1.ToString(), value2, StringComparison.InvariantCultureIgnoreCase) == 0;
         }
     }
 }

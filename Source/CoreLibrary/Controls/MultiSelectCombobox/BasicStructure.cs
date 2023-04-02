@@ -16,13 +16,19 @@ namespace BlackPearl.Controls.CoreLibrary
         #region Constructor
         static MultiSelectCombobox()
         {
+#if DEBUG
+            //https://weblogs.asp.net/akjoshi/resolving-un-harmful-binding-errors-in-wpf
+            System.Diagnostics.PresentationTraceSources.DataBindingSource.Switch.Level = System.Diagnostics.SourceLevels.Critical;
+#endif
             DefaultStyleKeyProperty.OverrideMetadata(typeof(MultiSelectCombobox), new FrameworkPropertyMetadata(typeof(MultiSelectCombobox)));
         }
         public MultiSelectCombobox()
         {
             PreviewKeyDown += MultiSelectCombobox_PreviewKeyDown;
             LostFocus += MultiSelectCombobox_LostFocus;
+            DelayedTextEnterFilter.Elapsed += DelayedTextEnterFilter_Elapsed;
         }
+
         #endregion
 
         #region Template Parts
@@ -95,7 +101,7 @@ namespace BlackPearl.Controls.CoreLibrary
 
                 suggestionElement = value;
                 suggestionElement.DisplayMemberPath = DisplayMemberPath;
-                suggestionElement.ItemsSource = ItemSource;
+                suggestionElement.ItemsSource = GetItemSource(richTextBoxElement, (System.Collections.Generic.IEnumerable<object>)ItemSource, LookUpContract, ShowCreateNewItem);
 
                 if (suggestionElement != null)
                 {
@@ -105,6 +111,7 @@ namespace BlackPearl.Controls.CoreLibrary
                 }
             }
         }
+
         #endregion
 
         #region Properties
@@ -142,7 +149,7 @@ namespace BlackPearl.Controls.CoreLibrary
         }
 
         /// <summary>
-        /// Char value that separates two selected items. Default value is ';'
+        /// Array of additional char value that separates two selected items. Default value is null
         /// </summary>
         public static readonly DependencyProperty AdditionalItemSeparatorsProperty =
             DependencyProperty.Register(nameof(AdditionalItemSeparators), typeof(char[]), typeof(MultiSelectCombobox), new PropertyMetadata(System.Array.Empty<char>()));
@@ -150,6 +157,28 @@ namespace BlackPearl.Controls.CoreLibrary
         {
             get => (char[])GetValue(AdditionalItemSeparatorsProperty);
             set => SetValue(AdditionalItemSeparatorsProperty, value);
+        }
+
+        /// <summary>
+        /// Do delete empty values. Default value is true
+        /// </summary>
+        public static readonly DependencyProperty DoDeleteInvalidEntryProperty =
+            DependencyProperty.Register(nameof(DoDeleteInvalidEntry), typeof(bool), typeof(MultiSelectCombobox), new PropertyMetadata(true));
+        public bool DoDeleteInvalidEntry
+        {
+            get => (bool)GetValue(DoDeleteInvalidEntryProperty);
+            set => SetValue(DoDeleteInvalidEntryProperty, value);
+        }
+
+        /// <summary>
+        /// Show add item. Default value is false
+        /// </summary>
+        public static readonly DependencyProperty ShowCreateNewItemProperty =
+            DependencyProperty.Register(nameof(ShowCreateNewItem), typeof(bool), typeof(MultiSelectCombobox), new PropertyMetadata(false));
+        public bool ShowCreateNewItem
+        {
+            get => (bool)GetValue(ShowCreateNewItemProperty);
+            set => SetValue(ShowCreateNewItemProperty, value);
         }
 
         /// <summary>
@@ -230,8 +259,9 @@ namespace BlackPearl.Controls.CoreLibrary
                 return;
             }
 
-            multiChoiceControl.SuggestionElement.ItemsSource = (e.NewValue as IEnumerable)?.Cast<object>();
+            multiChoiceControl.SuggestionElement.ItemsSource = multiChoiceControl.GetItemSource(multiChoiceControl.richTextBoxElement, (e.NewValue as IEnumerable)?.Cast<object>(), multiChoiceControl.LookUpContract, multiChoiceControl.ShowCreateNewItem);
         }
+
         /// <summary>
         /// Display member path change handler
         /// </summary>
