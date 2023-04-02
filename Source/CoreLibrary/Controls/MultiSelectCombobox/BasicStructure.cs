@@ -26,7 +26,6 @@ namespace BlackPearl.Controls.CoreLibrary
         {
             PreviewKeyDown += MultiSelectCombobox_PreviewKeyDown;
             LostFocus += MultiSelectCombobox_LostFocus;
-            DelayedTextEnterFilter.Elapsed += DelayedTextEnterFilter_Elapsed;
         }
 
         #endregion
@@ -101,7 +100,7 @@ namespace BlackPearl.Controls.CoreLibrary
 
                 suggestionElement = value;
                 suggestionElement.DisplayMemberPath = DisplayMemberPath;
-                suggestionElement.ItemsSource = GetItemSource(richTextBoxElement, (System.Collections.Generic.IEnumerable<object>)ItemSource, LookUpContract, ShowCreateNewItem);
+                suggestionElement.ItemsSource = ItemSource;
 
                 if (suggestionElement != null)
                 {
@@ -259,7 +258,7 @@ namespace BlackPearl.Controls.CoreLibrary
                 return;
             }
 
-            multiChoiceControl.SuggestionElement.ItemsSource = multiChoiceControl.GetItemSource(multiChoiceControl.richTextBoxElement, (e.NewValue as IEnumerable)?.Cast<object>(), multiChoiceControl.LookUpContract, multiChoiceControl.ShowCreateNewItem);
+            multiChoiceControl.SuggestionElement.ItemsSource = (e.NewValue as IEnumerable)?.Cast<object>();
         }
 
         /// <summary>
