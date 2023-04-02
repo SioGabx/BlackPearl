@@ -45,7 +45,10 @@ namespace BlackPearl.Controls.CoreLibrary
                     richTextBoxElement.TextChanged -= RichTextBoxElement_TextChanged;
                     richTextBoxElement.SizeChanged -= RichTextBoxElement_SizeChanged;
                     DataObject.RemovePastingHandler(richTextBoxElement, PasteHandler);
+                    DataObject.RemoveCopyingHandler(richTextBoxElement, OnSelectionStartDrag);
                     richTextBoxElement.RemoveHandler(CommandManager.PreviewExecutedEvent, new ExecutedRoutedEventHandler(SetClipboardTextWithCommandCancelled));
+                    richTextBoxElement.DragEnter -= OnDragEnter;
+                    richTextBoxElement.Drop -= OnDragDrop;
                 }
 
                 richTextBoxElement = value;
@@ -252,7 +255,7 @@ namespace BlackPearl.Controls.CoreLibrary
             routingStrategy: RoutingStrategy.Bubble,
             handlerType: typeof(SelectionChangedEventHandler), ownerType:
             typeof(MultiSelectCombobox));
-        public event System.EventHandler<SelectionChangedEventArgs> SelectionChanged
+        public event SelectionChangedEventHandler SelectionChanged
         {
             add { AddHandler(SelectionChangedEvent, value); }
             remove { RemoveHandler(SelectionChangedEvent, value); }
