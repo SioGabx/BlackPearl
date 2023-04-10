@@ -46,10 +46,10 @@ namespace BlackPearl.Controls.CoreLibrary
                     richTextBoxElement.TextChanged -= RichTextBoxElement_TextChanged;
                     richTextBoxElement.SizeChanged -= RichTextBoxElement_SizeChanged;
                     DataObject.RemovePastingHandler(richTextBoxElement, PasteHandler);
-                    DataObject.RemoveCopyingHandler(richTextBoxElement, OnSelectionStartDrag);
                     richTextBoxElement.RemoveHandler(CommandManager.PreviewExecutedEvent, new ExecutedRoutedEventHandler(SetClipboardTextWithCommandCancelled));
-                    richTextBoxElement.DragEnter -= OnDragEnter;
-                    richTextBoxElement.Drop -= OnDragDrop;
+                    richTextBoxElement.PreviewMouseMove -= PreviewMouseMoveHandler;
+                    richTextBoxElement.PreviewDragOver -= PreviewDragOverHandler;
+                    richTextBoxElement.PreviewDrop -= PreviewDropHandler;
                 }
 
                 richTextBoxElement = value;
@@ -70,11 +70,10 @@ namespace BlackPearl.Controls.CoreLibrary
                     richTextBoxElement.TextChanged += RichTextBoxElement_TextChanged;
                     richTextBoxElement.SizeChanged += RichTextBoxElement_SizeChanged;
                     DataObject.AddPastingHandler(richTextBoxElement, PasteHandler);
-                    DataObject.AddCopyingHandler(richTextBoxElement, OnSelectionStartDrag);
                     richTextBoxElement.AddHandler(CommandManager.PreviewExecutedEvent, new ExecutedRoutedEventHandler(SetClipboardTextWithCommandCancelled));
-                    richTextBoxElement.DragEnter += OnDragEnter;
-                    richTextBoxElement.Drop += OnDragDrop;
-                    richTextBoxElement.AllowDrop = true;
+                    richTextBoxElement.PreviewMouseMove += PreviewMouseMoveHandler;
+                    richTextBoxElement.PreviewDragOver += PreviewDragOverHandler;
+                    richTextBoxElement.PreviewDrop += PreviewDropHandler;
                 }
             }
         }

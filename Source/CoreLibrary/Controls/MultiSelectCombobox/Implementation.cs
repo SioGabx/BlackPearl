@@ -1,4 +1,4 @@
-﻿using BlackPearl.Controls.Extension;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +6,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+
+using BlackPearl.Controls.Extension;
+
 using EM = BlackPearl.Controls.CoreLibrary.EntensionMethods;
 
 namespace BlackPearl.Controls.CoreLibrary
@@ -15,46 +18,131 @@ namespace BlackPearl.Controls.CoreLibrary
         #region Members
         private bool isHandlerRegistered = true;
         private readonly object handlerLock = new object();
+        private readonly object dragDropLock = new object();
+        private bool isDragDropInProgress = false;
 
         #endregion
 
         #region Control Event Handlers
 
-        private void OnDragEnter(object sender, DragEventArgs e)
-            => e.Effects = e.Data.GetDataPresent(DataFormats.Text)
-                ? DragDropEffects.Move
-                : DragDropEffects.None;
+        private void PreviewDragOverHandler(object sender, DragEventArgs e)
+         => DragDropHandlePointerAndGetData(e);
 
-        private void OnDragDrop(object sender, DragEventArgs e)
+        private void PreviewDropHandler(object sender, DragEventArgs e)
         {
-            if (!e.Data.GetDataPresent(typeof(string)))
+            try
             {
-                return;
-            }
+                var data = DragDropHandlePointerAndGetData(e) as object[];
+                if (data == null)
+                    return;
 
-            object dragValue = e.Data.GetData(typeof(string));
-            if (dragValue == null)
+                if (!UnsubscribeHandler())
+                {
+                    return;
+                }
+
+                foreach (var obj in data)
+                {
+                    AddToSelectedItems(obj);
+                }
+            }
+            catch { }
+            finally
             {
-                return;
+                //Subscribe back
+                SubsribeHandler();
             }
-
-            if (sender is RichTextBox dragRichTextBoxValueSource && dragRichTextBoxValueSource != null && dragRichTextBoxValueSource != RichTextBoxElement)
-            {
-                dragRichTextBoxValueSource.Selection.Text = string.Empty;
-                RichTextBoxElement.Focus();
-            }
-
-            PasteHandler(dragValue.ToString());
         }
 
-        private void OnSelectionStartDrag(object sender, DataObjectCopyingEventArgs e)
+        private object DragDropHandlePointerAndGetData(DragEventArgs e)
         {
-            if (!e.IsDragDrop)
+            e.Handled = true;
+            e.Effects = DragDropEffects.None;
+
+            if (isDragDropInProgress)
+                return null;
+
+            if (!e.Data.GetDataPresent("Object"))
+                return null;
+
+            object data = e.Data.GetData("Object");
+
+            e.Effects = e.KeyStates.HasFlag(DragDropKeyStates.ControlKey)
+                    ? DragDropEffects.Copy
+                    : DragDropEffects.Move;
+
+            return data;
+        }
+
+        private void PreviewMouseMoveHandler(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed || e.Handled || isDragDropInProgress)
             {
                 return;
             }
 
-            DragDrop.DoDragDrop(richTextBoxElement, richTextBoxElement.GetSelectedText(), DragDropEffects.Move);
+            lock (dragDropLock)
+            {
+                if (isDragDropInProgress)
+                    return;
+
+                isDragDropInProgress = true;
+            }
+
+            Dispatcher.BeginInvoke((Action)(() =>
+            {
+                try
+                {
+                    var objectsToBeSent = richTextBoxElement.GetSelectedObjects();
+                    if ((objectsToBeSent?.Length ?? 0) == 0)
+                        return;
+
+                    DataObject data = new DataObject();
+                    data.SetData("Object", objectsToBeSent);
+                    var dropResult = DragDrop.DoDragDrop(richTextBoxElement, data, DragDropEffects.Move | DragDropEffects.Copy);
+
+                    if (dropResult != DragDropEffects.Move)
+                        return;
+
+                    RemoveSelectedItems(objectsToBeSent);
+                }
+                catch { }
+                finally
+                {
+                    isDragDropInProgress = false;
+                }
+            }));
+        }
+
+        private void RemoveSelectedItems(object[] selectedItems)
+        {
+            try
+            {
+                //Unsubscribe handlers first
+                if (!UnsubscribeHandler())
+                {
+                    //Failed to unsubscribe, return
+                    return;
+                }
+
+                foreach (var i in selectedItems)
+                {
+                    SelectedItems.Remove(i);
+                }
+
+                //Clear everything in RichTextBox
+                RichTextBoxElement?.ClearParagraph();
+
+                //Add all selected items
+                foreach (object item in SelectedItems)
+                {
+                    RichTextBoxElement?.AddToParagraph(item, CreateInlineUIElement);
+                }
+            }
+            finally
+            {
+                SubsribeHandler();
+            }
         }
 
         private void PasteHandler(object sender, DataObjectPastingEventArgs e)
@@ -62,7 +150,6 @@ namespace BlackPearl.Controls.CoreLibrary
             try
             {
                 string clipboard = GetClipboardTextWithCommandCancelled(e);
-                RichTextBoxElement.Selection.Text = string.Empty;
                 PasteHandler(clipboard);
             }
             catch { }
@@ -112,30 +199,30 @@ namespace BlackPearl.Controls.CoreLibrary
                 switch (e.Key)
                 {
                     case Key.Down:
-                    {
-                        e.Handled = true;
-                        HandleKeyboardDownKeyPress();
-                    }
-                    break;
+                        {
+                            e.Handled = true;
+                            HandleKeyboardDownKeyPress();
+                        }
+                        break;
                     case Key.Up:
-                    {
-                        e.Handled = true;
-                        HandleKeyboardUpKeyPress();
-                    }
-                    break;
+                        {
+                            e.Handled = true;
+                            HandleKeyboardUpKeyPress();
+                        }
+                        break;
                     case Key.Enter:
-                    {
-                        e.Handled = true;
-                        UpdateSelectedItemsFromSuggestionDropdown();
-                    }
-                    break;
+                        {
+                            e.Handled = true;
+                            UpdateSelectedItemsFromSuggestionDropdown();
+                        }
+                        break;
                     case Key.Escape:
-                    {
-                        e.Handled = true;
-                        HideSuggestions(EM.SuggestionCleanupOperation.ResetIndex | EM.SuggestionCleanupOperation.ClearSelection);
-                        RichTextBoxElement.TryFocus();
-                    }
-                    break;
+                        {
+                            e.Handled = true;
+                            HideSuggestions(EM.SuggestionCleanupOperation.ResetIndex | EM.SuggestionCleanupOperation.ClearSelection);
+                            RichTextBoxElement.TryFocus();
+                        }
+                        break;
                     default:
                         break;
                 }
@@ -326,7 +413,6 @@ namespace BlackPearl.Controls.CoreLibrary
             else if (e.Command == ApplicationCommands.Cut)
             {
                 Clipboard.SetText(RichTextBoxElement.GetSelectedText());
-                RichTextBoxElement.Selection.Text = "";
                 e.Handled = true;
             }
         }
