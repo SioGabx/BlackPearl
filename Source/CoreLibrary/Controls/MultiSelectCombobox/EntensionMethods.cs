@@ -182,7 +182,8 @@ namespace BlackPearl.Controls.CoreLibrary
         }
         public static void RemoveRunBlocks(this RichTextBox richTextBox)
         {
-            if (!(richTextBox?.Document?.Blocks?.FirstBlock is Paragraph paragraph))
+            Paragraph paragraph = richTextBox?.GetParagraph();
+            if (paragraph == null)
             {
                 return;
             }
@@ -213,7 +214,7 @@ namespace BlackPearl.Controls.CoreLibrary
         {
             try
             {
-                if (richTextBox?.Document?.Blocks?.FirstBlock is Paragraph)
+                if (richTextBox?.GetParagraph() != null)
                 {
                     return;
                 }
